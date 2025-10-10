@@ -34,12 +34,10 @@ COOLRF HeatStick - модуль управления различными кли
 
 - https://habr.com/ru/company/coolrf/blog/
   - https://habr.com/ru/company/coolrf/blog/589381/ HeatStick рулит. Конвектором Ballu
-- https://vk.com/coolrf
-- https://www.instagram.com/coolrf/
 
 ### Где купить?
 
-- https://www.avito.ru/ekaterinburg/tovary_dlya_kompyutera/coolrf_heatstick_upravlenie_konvektoromboylerom_2663725969
+- Telegram: @ekburgets
 
 ## Сборка прошивки
 ```
