@@ -1,5 +1,7 @@
 # COOLRF HeatStick for ESPHome
 
+[Русское описание](README_RU.md) | English
+
 Modern ESPHome firmware for the original COOLRF HeatStick (ESP8285) used with
 Ballu Digital Inverter controllers, including BCT/EVU-I.
 
