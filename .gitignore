@@ -1,0 +1,7 @@
+.esphome/
+.venv/
+secrets.yaml
+__pycache__/
+*.bin
+*.zip
+to load/

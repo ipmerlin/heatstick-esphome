@@ -1,72 +1,81 @@
-# Прошивка для COOLRF HeatStick на базе ESPHome
+# COOLRF HeatStick for ESPHome
 
-## COOLRF HeatStick
+Modern ESPHome firmware for the original COOLRF HeatStick (ESP8285) used with
+Ballu Digital Inverter controllers, including BCT/EVU-I.
 
-COOLRF HeatStick - модуль управления различными климатическими устройствами 
-(конвекторами, водонагревателями, кондиционерами) ряда производителей (Ballu, Zanussi, Electrolux).
+## What changed
 
-Устанавливается вместо штатного модуля управления производителя. Заменяет:
-- Ballu Smart Wi-Fi BEC/WF-01
-- Zanussi ZCH/WF-01 Smart Wi-Fi
-- Electrolux Smart Wi-Fi ECH/WF-01
-- Ballu Smart Wi-Fi BEC/WFN-02 (требуется проверка)
+- Migrated from the removed `custom_component` API to a local external component.
+- Added a native Home Assistant climate entity.
+- Fixed the mode feedback loop that could repeatedly switch the heater after
+  changing from `No frost` back to `Comfort`.
+- Added a streaming UART parser that handles fragmented and consecutive packets.
+- Unknown protocol values are logged and ignored instead of crashing the device.
+- Added periodic state synchronization and safe command handling before the
+  first valid state packet is received.
+- Updated the configuration for ESPHome 2026.9 and its current OTA syntax.
 
-В отличие от оригинального модуля позволяет интегрировать управление климатическим устройством 
-в вашу систему умного дома на базе Home Assistant, либо в любую другую DIY-систему.
+## Hardware
 
-### Поддерживаемые устройства
+Target board: the original COOLRF HeatStick with ESP8285.
 
-- Конвектор Ballu Evolution Transformer с инверторным блоком управления.
+The heater communication bus uses UART0 at 9600 baud:
 
-### Потенциально поддерживаемые устройств
+- TX: GPIO1
+- RX: GPIO3
+- 8 data bits, no parity, 1 stop bit
 
-Устройства из этого раздела либо сразу заработают с модулем. Либо заработают после коррекции прошивки.
+Serial logging is disabled because the same UART is connected to the heater.
+Runtime logs remain available through the ESPHome native API.
 
-- Водонагреватель Ballu SMART WiFi
-- Водонагреватель ZANUSSI SPLENDORE XP 2.0
-- Водонагреватель Electrolux MEGAPOLIS WiFi
-- Конвектор Ballu Apollo Transformer с инверторным блоком управления
-- Конвектор Electrolux Transformer System с инверторным блоком управления
-- Кондиционер Ballu Platinum Evolution DC inverter
-- Кондиционер Ballu Lagoon DC inverter 2021
+## Build
 
-### Подробнее о проекте
+1. Copy `secrets.example.yaml` to `secrets.yaml`.
+2. Replace all example values with your Wi-Fi credentials.
+3. Validate and compile:
 
-- https://habr.com/ru/company/coolrf/blog/
-  - https://habr.com/ru/company/coolrf/blog/589381/ HeatStick рулит. Конвектором Ballu
-
-### Где купить?
-
-- Telegram: @ekburgets
-
-## Сборка прошивки
+```powershell
+.\.venv\Scripts\esphome.exe config coolrf-heatstick.yaml
+.\.venv\Scripts\esphome.exe compile coolrf-heatstick.yaml
 ```
-sudo pip install esphome
-mkdir ~/coolrf
-cd ~/coolrf
-git clone https://github.com/coolrf/heatstick-esphome.git
-nano wifi.yaml # содержимое файла указано ниже
-cd heatstick-esphome
-esphome run heatstick-esphome.yaml
+
+The initial serial image is generated as:
+
+```text
+.esphome/build/ballu-heatstick/.pioenvs/ballu-heatstick/firmware.factory.bin
 ```
-### Требования к версиям
 
-ESPHome 2021.11.2 или выше.
-Python 3 или выше.
+## First installation
 
-### Файл wifi.yaml
+Disconnect the HeatStick from the heater before connecting a 3.3 V USB-to-UART
+programmer. Never connect the programmer while the HeatStick is powered by the
+heater. Back up the existing flash before erasing or writing it.
 
-Файл с настройками паролей к беспроводным сетям вынесен за пределы репозитория. Для сборки прошивки его необходимо создать вручную.
+Do not install the current build on an unattended heater. The first hardware
+test must be supervised and should verify:
 
-```yaml
+1. State is received without UART checksum errors.
+2. On/off and target temperature each generate one command.
+3. `Comfort -> No frost -> Comfort` does not cause repeated switching.
+4. Controls on the heater are reflected in Home Assistant without being echoed
+   back as new commands.
 
-wifi:
-  networks:
-  - ssid: "One"
-    password: "Password"
-  - ssid: "Two"
-    password: "Password"
-  ap: {}
+## Repository layout
 
-ota:
-```
+- `coolrf-heatstick.yaml` — current ESP8285 configuration.
+- `components/heatstick/` — maintained ESPHome component.
+- `coolrf-heatstick-legacy.yaml` and `coolrf-heatstick.h` — original firmware,
+  retained for protocol comparison.
+- `README-legacy.md` — original project documentation.
+
+## Status
+
+Version `0.2.2-dev` compiles successfully for ESP8285 with ESPHome 2026.9.0
+and has been tested on a Ballu Digital Inverter BCT/EVU-I. Home Assistant,
+the web interface, climate control, display control, operating modes and the
+`Comfort -> No frost -> Comfort` feedback-loop fix have been verified.
+
+Automatic power control works. Manual `Level 1` through `Level 5` commands are
+experimental: the heater acknowledges the selection but may continue to use
+its own automatic power level. Until the protocol is captured from the physical
+control panel, use `Auto` for normal operation.
