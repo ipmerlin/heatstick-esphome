@@ -16,6 +16,7 @@ Ballu Digital Inverter controllers, including BCT/EVU-I.
 - Added periodic state synchronization and safe command handling before the
   first valid state packet is received.
 - Updated the configuration for ESPHome 2026.9 and its current OTA syntax.
+- Restored the HeatStick board LED control on GPIO13.
 
 ## Hardware
 
@@ -72,10 +73,11 @@ test must be supervised and should verify:
 
 ## Status
 
-Version `0.2.2-dev` compiles successfully for ESP8285 with ESPHome 2026.9.0
+Version `0.2.3-dev` compiles successfully for ESP8285 with ESPHome 2026.9.0
 and has been tested on a Ballu Digital Inverter BCT/EVU-I. Home Assistant,
-the web interface, climate control, display control, operating modes and the
-`Comfort -> No frost -> Comfort` feedback-loop fix have been verified.
+the web interface, climate control, display control, operating modes, board LED
+control and the `Comfort -> No frost -> Comfort` feedback-loop fix have been
+verified.
 
 Automatic power control works. Manual `Level 1` through `Level 5` commands are
 experimental: the heater acknowledges the selection but may continue to use
