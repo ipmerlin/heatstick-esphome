@@ -80,13 +80,106 @@ sensor:
   - platform: uptime
     name: Uptime
 
-switch:
+globals:
+  - id: led_tick
+    type: uint8_t
+    restore_value: false
+    initial_value: "0"
+  - id: pairing_button_held
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
+output:
   - platform: gpio
+    id: heatstick_led_output
+    pin: GPIO13
+
+switch:
+  - platform: template
     id: heatstick_led
     name: LED
     icon: mdi:led-outline
-    pin: GPIO13
-    restore_mode: ALWAYS_OFF
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    turn_off_action:
+      - output.turn_off: heatstick_led_output
+
+binary_sensor:
+  - platform: gpio
+    id: heatstick_pairing_button
+    internal: true
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+    filters:
+      - delayed_on: 50ms
+      - delayed_off: 50ms
+    on_press:
+      - lambda: id(pairing_button_held) = true;
+      - script.execute: enter_wifi_pairing
+    on_release:
+      - lambda: id(pairing_button_held) = false;
+      - script.stop: enter_wifi_pairing
+
+script:
+  - id: enter_wifi_pairing
+    mode: restart
+    then:
+      - delay: 5s
+      - lambda: |-
+          ESP_LOGW("pairing", "Factory reset requested; starting Wi-Fi pairing mode");
+          global_preferences->reset();
+
+          // Keep one deliberately unavailable STA entry so newly entered
+          // captive-portal credentials use the normal configuration key and
+          // are loaded again after the next reboot.
+          wifi::WiFiAP pairing_ap;
+          pairing_ap.set_ssid("__heatstick_pairing__");
+          wifi::global_wifi_component->disable();
+          wifi::global_wifi_component->set_sta(pairing_ap);
+          wifi::global_wifi_component->set_ap_timeout(1000);
+          wifi::global_wifi_component->enable();
+
+interval:
+  - interval: 250ms
+    then:
+      - lambda: |-
+          id(led_tick)++;
+
+          // Solid while the physical button is held.
+          if (id(pairing_button_held)) {
+            id(heatstick_led_output).turn_on();
+            return;
+          }
+
+          // The HA/web switch disables all automatic indication.
+          if (!id(heatstick_led).state) {
+            id(heatstick_led_output).turn_off();
+            return;
+          }
+
+          // Fast blink: fallback AP/captive portal is ready for pairing.
+          if (wifi::global_wifi_component->is_ap_active()) {
+            if ((id(led_tick) & 1U) == 0U)
+              id(heatstick_led_output).turn_on();
+            else
+              id(heatstick_led_output).turn_off();
+            return;
+          }
+
+          // Short flash every two seconds: Wi-Fi connection is lost.
+          if (!wifi::global_wifi_component->is_connected()) {
+            if ((id(led_tick) % 8U) == 0U)
+              id(heatstick_led_output).turn_on();
+            else
+              id(heatstick_led_output).turn_off();
+            return;
+          }
+
+          // Normal connected state.
+          id(heatstick_led_output).turn_off();
 
 button:
   - platform: restart

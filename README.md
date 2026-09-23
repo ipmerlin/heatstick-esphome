@@ -17,6 +17,7 @@ Ballu Digital Inverter controllers, including BCT/EVU-I.
   first valid state packet is received.
 - Updated the configuration for ESPHome 2026.9 and its current OTA syntax.
 - Restored the HeatStick board LED control on GPIO13.
+- Restored the physical GPIO0 button for factory reset and Wi-Fi pairing.
 
 ## Hardware
 
@@ -30,6 +31,25 @@ The heater communication bus uses UART0 at 9600 baud:
 
 Serial logging is disabled because the same UART is connected to the heater.
 Runtime logs remain available through the ESPHome native API.
+
+## Button and status LED
+
+Hold the physical HeatStick button for 5 seconds to erase saved preferences and
+enter Wi-Fi pairing mode. Connect to the `Ballu Digital Inverter Fallback`
+access point and open `http://192.168.4.1` to enter new Wi-Fi credentials. The
+fallback AP password is the `fallback_password` value from `secrets.yaml`.
+
+The GPIO13 LED patterns are:
+
+- off — Wi-Fi is connected;
+- one short flash every two seconds — Wi-Fi is disconnected;
+- fast blinking — the fallback access point is ready for pairing;
+- solid while held — the physical button is pressed.
+
+The `LED` switch in Home Assistant and the web interface disables automatic LED
+indication. Button-hold feedback remains enabled so a factory reset is visible.
+GPIO0 is also an ESP8266 boot strap pin: do not power-cycle or reset the stick
+while holding the physical button.
 
 ## Build
 
@@ -75,9 +95,10 @@ test must be supervised and should verify:
 
 Version `0.2.3-dev` compiles successfully for ESP8285 with ESPHome 2026.9.0
 and has been tested on a Ballu Digital Inverter BCT/EVU-I. Home Assistant,
-the web interface, climate control, display control, operating modes, board LED
-control and the `Comfort -> No frost -> Comfort` feedback-loop fix have been
-verified.
+the web interface, climate control, display control, operating modes and the
+`Comfort -> No frost -> Comfort` feedback-loop fix have been verified. The
+restored physical reset/pairing button and automatic LED patterns compile
+successfully but still require a supervised hardware test.
 
 Automatic power control works. Manual `Level 1` through `Level 5` commands are
 experimental: the heater acknowledges the selection but may continue to use
