@@ -32,6 +32,44 @@ The heater communication bus uses UART0 at 9600 baud:
 Serial logging is disabled because the same UART is connected to the heater.
 Runtime logs remain available through the ESPHome native API.
 
+### Reconstructed hardware diagram
+
+The original COOLRF PCB schematic was not published. The project author also
+[confirmed in the Habr discussion](https://habr.com/ru/companies/coolrf/articles/589381/comments/)
+that no board schematic was available publicly. The diagram below is therefore
+a **reconstructed functional diagram**, not the original production schematic.
+It contains only connections confirmed by the firmware, hardware testing, the
+[COOLRF article](https://habr.com/ru/companies/coolrf/articles/589381/) and the
+[ITEAD PSF-B85 documentation](https://wiki.iteadstudio.com/PSF-B85).
+
+```mermaid
+flowchart LR
+    H["Heater controller<br/>USB-shaped socket"]
+    subgraph S["COOLRF HeatStick PCB — reconstructed"]
+        P["5 V → 3.3 V<br/>on-board regulator"]
+        M["ITEAD PSF-B85<br/>ESP8285"]
+        U["UART0<br/>GPIO1 TX · GPIO3 RX"]
+        B["Button<br/>GPIO0 → GND"]
+        L["Status LED<br/>GPIO13"]
+        F["Programming pads<br/>VCC · GND · TX · RX · RESET · GPIO0"]
+        P --> M
+        M --- U
+        B --> M
+        M --> L
+        F --- M
+    end
+    H -->|"VBUS +5 V"| P
+    H <-->|"D+ / D− contacts carry UART<br/>9600 baud, 8N1"| U
+    H ---|"GND"| M
+```
+
+The USB-shaped connector does **not** carry USB protocol. Its two data contacts
+are reused for the UART pair. The public sources do not identify which specific
+contact, D+ or D−, is TX and which is RX, so that unverified mapping is
+intentionally omitted. The official circuit for the Wi-Fi module itself is
+available from ITEAD as the
+[PSF-B85 schematic](https://wiki.iteadstudio.com/File:PSF-B85_SCH.pdf).
+
 ## Button and status LED
 
 Hold the physical HeatStick button for 5 seconds to erase saved preferences and
