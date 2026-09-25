@@ -50,6 +50,7 @@ class HeatStick : public Component, public uart::UARTDevice {
   static uint8_t checksum_(const std::vector<uint8_t> &packet);
   std::vector<uint8_t> rx_; std::array<uint8_t, STATE_SIZE> state_{}; bool has_state_{false};
   uint32_t request_interval_{60000}, last_request_{0}, valid_packets_{0}, invalid_packets_{0};
+  bool pending_auto_{false}; uint32_t auto_transition_at_{0}; uint8_t last_valid_actual_power_{0};
   HeatStickClimate *climate_{nullptr}; HeatStickPowerSelect *power_select_{nullptr}; HeatStickModeSelect *mode_select_{nullptr};
   HeatStickDisplaySwitch *display_switch_{nullptr}; sensor::Sensor *current_temperature_sensor_{nullptr};
   sensor::Sensor *target_temperature_sensor_{nullptr}; sensor::Sensor *power_level_sensor_{nullptr};

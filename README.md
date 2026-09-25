@@ -41,13 +41,14 @@ fallback AP password is the `fallback_password` value from `secrets.yaml`.
 
 The GPIO13 LED patterns are:
 
-- off — Wi-Fi is connected;
+- solid — Wi-Fi is connected;
 - one short flash every two seconds — Wi-Fi is disconnected;
 - fast blinking — the fallback access point is ready for pairing;
 - solid while held — the physical button is pressed.
 
-The `LED` switch in Home Assistant and the web interface disables automatic LED
-indication. Button-hold feedback remains enabled so a factory reset is visible.
+The `LED` switch in Home Assistant and the web interface enables or disables
+automatic LED indication. Button-hold feedback remains enabled so a factory
+reset is visible.
 GPIO0 is also an ESP8266 boot strap pin: do not power-cycle or reset the stick
 while holding the physical button.
 
@@ -93,14 +94,24 @@ test must be supervised and should verify:
 
 ## Status
 
-Version `0.2.3-dev` compiles successfully for ESP8285 with ESPHome 2026.9.0
+Version `0.2.5` compiles successfully for ESP8285 with ESPHome 2026.9.0
 and has been tested on a Ballu Digital Inverter BCT/EVU-I. Home Assistant,
 the web interface, climate control, display control, operating modes and the
 `Comfort -> No frost -> Comfort` feedback-loop fix have been verified. The
-restored physical reset/pairing button and automatic LED patterns compile
-successfully but still require a supervised hardware test.
+restored physical reset/pairing button and automatic LED patterns have also
+been verified on the original HeatStick hardware.
 
-Automatic power control works. Manual `Level 1` through `Level 5` commands are
-experimental: the heater acknowledges the selection but may continue to use
-its own automatic power level. Until the protocol is captured from the physical
-control panel, use `Auto` for normal operation.
+Automatic power control and manual `Level 1` through `Level 5` commands work on
+the tested BCT/EVU-I. In `No frost` mode the heater intentionally forces Level 1
+and rejects other power levels.
+
+`Current power level` reports the selected stage in manual mode because the
+heater leaves its `actual_power` protocol field at zero. In `Auto`, it reports
+the dynamically measured `actual_power` value and filters the controller's
+invalid transient value 7.
+
+The stock control panel always reaches `Auto` through Level 1. Some BCT/EVU-I
+controllers can shut down after a direct high manual level to `Auto` command.
+Firmware 0.2.5 therefore reproduces the panel sequence: it switches to Level 1,
+waits five seconds without blocking ESPHome, and then enables `Auto`. Repeated
+Level 5 to `Auto` hardware tests completed without a shutdown.
